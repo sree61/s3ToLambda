@@ -1,15 +1,38 @@
-from aws_cdk import core as cdk
+from aws_cdk import (
+    core,
+    aws_s3 as _s3,
+    aws_sns as _sns,
+    aws_sns_subscriptions as _sns_subscriptions,
+    aws_lambda as _lambda,
+    aws_lambda_event_sources as _event,
+    )
 
-# For consistency with other languages, `cdk` is the preferred import name for
-# the CDK's core module.  The following line also imports it as `core` for use
-# with examples from the CDK Developer's Guide, which are in the process of
-# being updated to use `cdk`.  You may delete this import if you don't need it.
-from aws_cdk import core
 
+class S3ToLambdaStack(core.Stack):
 
-class S3ToLambdaStack(cdk.Stack):
-
-    def __init__(self, scope: cdk.Construct, construct_id: str, **kwargs) -> None:
+    def __init__(self, scope: core.Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        # The code that defines your stack goes here
+        my_s3_bucket = _s3.Bucket(
+            self,
+            id = 'myS3Bucket'
+        )
+
+        my_sns_topic = _sns.Topic(\
+            self, 
+            id = 'demoTopic'
+        )
+
+        my_sns_sub = _sns_subscriptions.EmailSubscription("sreeamaravila@gmail.com")
+        my_sns_sub.bind(my_sns_topic)
+
+        my_function = _lambda.Function(
+            self,
+            id = 'demoFunction',
+            code = _lambda.Code.asset(r'../src'),
+            handler = 'fun01.handler'
+            )
+        trigger_event = _event.S3EventSource(
+            bucket = my_s3_bucket,
+            events = [_s3.EventType.OBJECT_CREATED]
+        )
